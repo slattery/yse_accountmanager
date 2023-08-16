@@ -1,0 +1,5 @@
+name: YSE Account Manager
+type: module
+description: User and Profile functions
+core_version_requirement: '^9 || ^10'
+package: YSE WebOps

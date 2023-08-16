@@ -1,0 +1,6 @@
+{
+  "name": "slattery/yse_cas_extras",
+  "description": "Attribute lookup support for register and login",
+  "type": "drupal-custom-module",
+  "license": "GPL-2.0-or-later"
+}

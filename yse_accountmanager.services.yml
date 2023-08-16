@@ -1,0 +1,18 @@
+services:
+  logger.channel.yse_accountmanager:
+    parent: logger.channel_base
+    arguments: ['yse_accountmanager']
+  cache.yse_accountmanager:
+    class: Drupal\Core\Cache\CacheBackendInterface
+    tags:
+      - { name: cache.bin }
+    factory: cache_factory:get
+    arguments: ['yse_accountmanager']
+  yse_accountmanager.discourseutils:
+    class: Drupal\yse_accountmanager\Service\YseDiscourseUtils
+    arguments: ['@config.factory', '@logger.channel.yse_accountmanager','@http_client']
+  yse_accountmanager.subscriber.migrate:
+    class: Drupal\yse_accountmanager\Subscriber\MigratePreRowSaveEventSubscriber
+    arguments: ['@config.factory','@cache.yse_accountmanager','@logger.channel.yse_accountmanager']
+    tags:
+      - { name: 'event_subscriber' }

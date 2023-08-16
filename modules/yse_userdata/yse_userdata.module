@@ -1,0 +1,118 @@
+<?php
+
+/**
+ * @file
+ * Enables the use of personal and site-wide contact forms.
+ */
+
+use Drupal\Core\Url;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\user\Entity\User;
+
+/**
+ * Implements hook_help().
+ */
+function yse_userdata_help($route_name, RouteMatchInterface $route_match) {
+
+  switch ($route_name) {
+    case 'help.page.yse_userdata':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('The YSE User Data module saves Directory lookup data in the user.data store rather than in entity fields.') . '</p>';
+      $output .- '<p>' . t('Huge debt to  https://git.drupalcode.org/project/file_mdm/ for its example of plugin structure.') . '</p>';
+      return $output;
+  }
+}
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Add directory lookup values to an individual user's account page.
+ *
+ * @see \Drupal\user\ProfileForm::form()
+ */
+function yse_userdata_form_user_form_alter(&$form, FormStateInterface $form_state) {
+  // make sure that we are allowing lookups system wide before altering this form
+  $lookups_enabled = \Drupal::configFactory()->getEditable('yse_userdata.settings')->get('enable_directory_lookups');
+  
+  if ((bool)$lookups_enabled){
+    $form['directory_lookups'] = [
+        '#type' => 'details',
+        '#title' => t('Directory Attributes'),
+        '#open' => TRUE,
+        '#weight' => 5,
+    ];
+    $account = $form_state->getFormObject()->getEntity();
+    // TBD must determine if this is masquerade safe.
+    if (!\Drupal::currentUser()->isAnonymous() && $account->id()) {
+        $account_upi   = \Drupal::service('user.data')->get('yse_userdata', $account->id(), 'upi');
+        $account_title = \Drupal::service('user.data')->get('yse_userdata', $account->id(), 'utitle');
+
+        $disable_entry = empty(array_intersect(['administrator'], \Drupal::currentUser()->getRoles()));
+    }
+    $form['directory_lookups']['upi'] = [
+        '#type' => 'textfield',
+        '#title' => t('UPI Attribute'),
+        '#disabled' => $disable_entry,
+        '#default_value' => $account_upi ?? null,
+        '#description' => t('Your UPI number. Used for SSO and other functions.'),
+    ];
+    $form['directory_lookups']['utitle'] = [
+        '#type' => 'textfield',
+        '#title' => t('Title Attribute'),
+        '#disabled' => $disable_entry,
+        '#default_value' => $account_title ?? null,
+        '#description' => t('Your title as found in the directory. May differ in profiles.'),
+    ];
+    $form['actions']['submit']['#submit'][] = 'yse_userdata_user_profile_form_submit';
+  }
+}
+
+/**
+ * Submit callback for the user profile form to save the contact page setting.
+ */
+function yse_userdata_user_profile_form_submit($form, FormStateInterface $form_state) {
+  $account = $form_state->getFormObject()->getEntity();
+  if ($account->id() && $form_state->hasValue('upi')) {
+    \Drupal::service('user.data')->set('yse_userdata', $account->id(), 'upi', $form_state->getValue('upi'));
+    \Drupal::service('user.data')->set('yse_userdata', $account->id(), 'utitle', $form_state->getValue('utitle'));
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Add the default directory lookup setting on the user settings page.
+ *
+ * @see \Drupal\user\AccountSettingsForm
+ */
+function yse_userdata_form_user_admin_settings_alter(&$form, FormStateInterface $form_state) {
+  $form['enable_directory_lookups'] = [
+    '#type' => 'details',
+    '#title' => t('Enable Directory Lookups'),
+    '#open' => TRUE,
+    '#weight' => 0,
+  ];
+  $form['enable_directory_lookups']['enable_directory_lookups'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Enable the Directory lookups for additional userdata'),
+    '#description' => t('Directory lookup actions will attempt to find attributes not carried by the CAS payload.'),
+    '#default_value' => \Drupal::configFactory()->getEditable('yse_userdata.settings')->get('enable_directory_lookups'),
+  ];
+  // Add submit handler to save contact configuration.
+  $form['#submit'][] = 'yse_userdata_form_user_admin_settings_submit';
+}
+
+/**
+ * Form submission handler for user_admin_settings().
+ *
+ * @see yse_userdata_form_user_admin_settings_alter()
+ */
+function yse_userdata_form_user_admin_settings_submit($form, FormStateInterface $form_state) {
+  \Drupal::configFactory()->getEditable('yse_userdata.settings')
+    ->set('enable_directory_lookups', $form_state->getValue('enable_directory_lookups'))
+    ->save();
+}
+

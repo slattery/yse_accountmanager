@@ -1,0 +1,4 @@
+userdata_cache:
+  enabled: TRUE
+  expiration: 900
+  disallowed_paths: {  }

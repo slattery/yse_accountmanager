@@ -1,0 +1,10 @@
+core_libraries:
+  dependencies:
+    - core/drupal
+    - core/jquery
+    - core/drupalSettings
+  js:
+    js/core.js: {}
+  css: 
+    theme:
+      css/core.css: {}

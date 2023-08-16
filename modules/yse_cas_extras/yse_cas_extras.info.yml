@@ -1,0 +1,6 @@
+name: YSE CAS Extras
+type: module
+description: Attribute lookup support for register and login
+core_version_requirement: '^9 || ^10'
+package: YSE WebOps
+

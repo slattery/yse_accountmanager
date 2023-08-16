@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * @file
+ * Examples demonstrating how to implement and invoke hooks.
+ */
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\yse_extauth_event_subscribers\Form\BulkLookupAddCasUsers;
+
+
+/**
+ * Implements hook_help().
+ */
+function yse_accountmanager_help($route_name, RouteMatchInterface $route_match) {
+  if ($route_name == 'help.page.yse_accountmanager') {
+    $text = file_get_contents(__DIR__ . '/README.md');
+    if (!Drupal::moduleHandler()->moduleExists('markdown')) {
+      return '<pre>' . $text . '</pre>';
+    }
+    else {
+      /** @var \Drupal\markdown\PluginManager\ParserManagerInterface $parser_manager */
+      $parser_manager = \Drupal::service('plugin.manager.markdown.parser');
+      $parser = $parser_manager->getDefaultParser([
+        'render_strategy' => ['type' => 'none'],
+      ]);
+      return $parser->parse($text);
+    }
+  }
+  return NULL;
+}
+
+/**
+ * HODE UP - account is not passed.
+ * username on discourse has been slugified before
+ * 
+ * Alter the parameters for the Discourse SSO.
+ *
+ * @param array $parameters
+ *   The parameters to be altered.
+ *
+ * @see \Drupal\discourse_sso\Controller\DiscourseSsoController::validate
+ */
+function hook_discourse_sso_parameters_alter(array &$parameters) {
+  /** @var \Drupal\user\UserInterface $account */
+  $accountid = \Drupal::currentUser()->id();
+  // I hope this reference survives the travel.
+  // this hook should run after the Discourse SSO module hook by virtue of alphabetical sort.
+  \Drupal::service('yse_accountmanager.discourseutils')->setup_parameters($parameters, $accountid);  
+}
+
+
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * @see yse_cas_extras_form_bulk_add_cas_users_alter()
+ * @see \Drupal\yse_cas_extras\Form\BulkAddCasUsers::parseLines
+ */
+
+

@@ -1,0 +1,18 @@
+services:
+  yse_userdata.manager:
+    class: Drupal\yse_userdata\YseUserdataManager
+    arguments: ['@config.factory','@plugin.manager.yse_userdata','@logger.channel.yse_userdata','@cache.yse_userdata','@user.data']
+  plugin.manager.yse_userdata:
+    class: Drupal\yse_userdata\Plugin\YseUserdataPluginManager
+    parent: default_plugin_manager
+    arguments: ['@config.factory']
+  logger.channel.yse_userdata:
+    parent: logger.channel_base
+    arguments: ['yse_userdata']
+  cache.yse_userdata:
+    class: Drupal\Core\Cache\CacheBackendInterface
+    tags:
+      - { name: cache.bin }
+    factory: cache_factory:get
+    arguments: ['yse_userdata']
+

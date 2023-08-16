@@ -1,0 +1,5 @@
+enable_directory_lookups: true
+ys_directory_service_host: 'HIDDEN'
+ys_directory_service_path: 'HIDDEN'
+ys_directory_service_name: 'HIDDEN'
+ys_directory_service_pass: 'HIDDEN'

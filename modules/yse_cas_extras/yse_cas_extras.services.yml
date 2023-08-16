@@ -1,0 +1,28 @@
+services:
+  yse_cas_extras.baggagehandler:
+    class: Drupal\yse_cas_extras\Service\CasBaggagehandler
+    arguments: ['@event_dispatcher','@cas.helper']
+  yse_cas_extras.subscriber.casprelogin:
+    class: Drupal\yse_cas_extras\Subscriber\CasPreLoginEventSubscriber
+    arguments: ['@yse_cas_extras.baggagehandler','@cas.user_manager','@config.factory']
+    tags:
+      - { name: 'event_subscriber' }
+  yse_cas_extras.subscriber.caspostlogin:
+    class: Drupal\yse_cas_extras\Subscriber\CasPostLoginEventSubscriber
+    arguments: ['@yse_cas_extras.baggagehandler','@cas.user_manager','@config.factory']
+    tags:
+      - { name: 'event_subscriber' }
+  yse_cas_extras.subscriber.caspreregister:
+    class: Drupal\yse_cas_extras\Subscriber\CasPreRegisterEventSubscriber
+    arguments: ['@yse_cas_extras.baggagehandler','@config.factory']
+    tags:
+      - { name: 'event_subscriber' }
+  yse_cas_extras.subscriber.extauthregister:
+    class: Drupal\yse_cas_extras\Subscriber\ExternalAuthRegisterEventSubscriber
+    arguments: ['@config.factory', '@logger.channel.yse_cas_extras']
+    tags:
+      - { name: 'event_subscriber' }
+  logger.channel.yse_cas_extras:
+    parent: logger.channel_base
+    arguments: ['yse_cas_extras']
+
