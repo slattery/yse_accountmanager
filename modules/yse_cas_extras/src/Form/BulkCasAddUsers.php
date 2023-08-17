@@ -122,12 +122,14 @@ public static function parseLines(array &$form, FormStateInterface $form_state) 
     $event_dispatcher->dispatch($cas_pre_register_event, CasHelper::EVENT_PRE_REGISTER);
     // the dispatched event should trigger the subscriber to populate the CAS attributes  
     // it is assumed that the event object can be passed on and used below with those attributes.
-
     try {
       /** @var \Drupal\user\UserInterface $user */
      //uncomment to find out what we have
      //dpr($cas_pre_register_event->getCasPropertyBag(), $return = FALSE, $name = 'bulkaddatts');
      //dpr($cas_pre_register_event->getPropertyValues(), $return = FALSE, $name = 'bulkaddprops');
+     if (empty($cas_pre_register_event->getCasPropertyBag()->getAttribute('email'))){
+      throw new CasLoginException("Cannot register, CAS user not found.", CasLoginException::SUBSCRIBER_DENIED_REG); 
+     }
 
       $user = $cas_user_manager->register($cas_property_bag->getOriginalUsername(), $cas_pre_register_event->getDrupalUsername(), $cas_pre_register_event->getPropertyValues());
 

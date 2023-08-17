@@ -19,6 +19,7 @@ trait YseProfileRepackagingTrait {
    */
 
    public function profileprep($ysedat){
+    \Drupal::logger('yse_ooof')->notice("A oooooooooof error occurred.");
 
     $ysedat = self::primarytypetarget($ysedat);
 
@@ -59,10 +60,10 @@ trait YseProfileRepackagingTrait {
     $manager = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
     //student_degree_extras
     if (!empty($ysedat["joint"])){
-      $types = $manager->loadTree('student_degree_extras');
+      $types = $manager->loadTree('student_degrees_extra',0,NULL,FALSE);
       $xtraterms = [];
       foreach ($types as $term) {
-          $xtraterms[strtolower($term->getName())] = $term->id();
+          $xtraterms[strtolower($term->name)] = $term->tid;
       }
 
       if (!empty($ysedat["jointdegree"])){
@@ -75,12 +76,12 @@ trait YseProfileRepackagingTrait {
 
     //student_degree_types
     if (!empty($ysedat["degree"])){
-      $degreetree = $manager->loadTree('student_degree_types',0,2,TRUE);
+      $degreetree = $manager->loadTree('student_degree_types',0,2,FALSE);
       $degreeterms = [];
       foreach ($degreetree as $term) {
         // we only want to load 2nd level
-        if (!empty($manager->loadParents($term->id()))) {
-          $degreeterms[strtolower($term->getName())] = $term->id();
+        if (!empty($term->parents)) {
+          $degreeterms[strtolower($term->name)] = $term->tid;
         }
       }
 
@@ -103,10 +104,10 @@ trait YseProfileRepackagingTrait {
   public function primarytypetarget($ysedat){
     // vocab should be a config setting - in a trait though?
     $manager = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
-    $types = $manager->loadTree('admin_primary_resource_types',0,NULL,TRUE);
+    $types = $manager->loadTree('admin_primary_resource_types',0,NULL,FALSE);
     $typeterms = [];
     foreach ($types as $term) {
-        $typeterms[strtolower($term->getName())] = $term->id();
+        $typeterms[strtolower($term->name)] = $term->tid;
     }
     // $typeterms = ['faculty' => 23, 'student' => 25, 'postdoc' => 812, 'staff' => 24]
 

@@ -1,8 +1,0 @@
-yse_accountmanager.dropbox_chooser_intercept:
-  path: '/yse_accountmanager/migrations/dropboxchooser'
-  defaults:
-    _form: '\Drupal\yse_accountmanager\Form\DropboxChooserInterceptForm'
-    _title: 'DropboxChooserInterceptForm'
-    nojs: ajax
-  requirements:
-    _permission: 'access content'

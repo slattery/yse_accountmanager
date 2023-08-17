@@ -11,8 +11,8 @@ services:
   yse_accountmanager.discourseutils:
     class: Drupal\yse_accountmanager\Service\YseDiscourseUtils
     arguments: ['@config.factory', '@logger.channel.yse_accountmanager','@http_client']
-  yse_accountmanager.subscriber.migrate:
-    class: Drupal\yse_accountmanager\Subscriber\MigratePreRowSaveEventSubscriber
-    arguments: ['@config.factory','@cache.yse_accountmanager','@logger.channel.yse_accountmanager']
+  yse_accountmanager.subscriber.migrate.accountextras:
+    class: Drupal\yse_accountmanager\Subscriber\UserextrasPostRowSaveEventSubscriber
+    arguments: ['@externalauth.authmap','@user.data','@logger.channel.yse_accountmanager']
     tags:
       - { name: 'event_subscriber' }

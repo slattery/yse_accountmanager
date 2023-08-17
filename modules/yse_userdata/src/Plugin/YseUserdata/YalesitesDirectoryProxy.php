@@ -8,7 +8,8 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\yse_userdata\YseUserdataException;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Psr7;
-use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ServerException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -91,11 +92,15 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
     $userdata = [];
     $ysdirrec = $this->retrieveDirectoryRecord();
 
-    if (is_array($ysdirrec)){
+    if ($ysdirrec && is_array($ysdirrec)){
       $userdata = $this->gatherAttributes($ysdirrec);
+    } elseif ($ysdirrec && is_string($ysdirrec)){
+      //I should pass an Ecxeption here to allow try/catch at the caller.
     } else {
       \Drupal::logger('yse_userdata')->notice('Directory returned a malformed result for user %lookupkey', ['%lookupkey' => $this->lookupkey]);
     }
+
+
 
     if (empty($this->netid) && empty($this->getNetid())){
       if (isset($userdata['netid'])){
@@ -169,27 +174,57 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
           'query'   => ['outputformat' => 'json', $lookuparg => $this->lookupkey ],
           'headers' => ['Accept'       => 'application/json' ],
         ]);
-        $json_arr = Json::decode($response->getBody(), TRUE);
+        $results = Json::decode($response->getBody(), TRUE);
 
-        if (is_array($json_arr)) {
-          $service_response = $json_arr['ServiceResponse'];
+        if (is_array($results)) {
+          if($results['root']){
+            $errmsg = $results['root']['message'];
+            //Exception here for try/catch in caller
+            \Drupal::logger('yse_userdata')->notice('Lookup did not return a recordfor %lookupkey: %errmsg', ['%lookupkey' => $this->lookupkey, '%errmsg' =>  $errmsg]);
+          }
+          elseif ($results['ServiceResponse']){
+            if ($results['ServiceResponse']['Record'] && is_array($results['ServiceResponse']['Record'])){
+              $record = $results['ServiceResponse']['Record'];
+              return $record;
+            } 
+            else {
+              \Drupal::logger('yse_userdata')->notice('ServiceResponse did not return a record for %lookupkey', ['%lookupkey' => $this->lookupkey]);
+            }
+          }
+          else {
+            \Drupal::logger('yse_userdata')->notice('Server did not contain a record for %lookupkey', ['%lookupkey' => $this->lookupkey]);
+            //Exception here for try/catch in caller
+            return FALSE;
+          }
         }
         else {
-          $type = gettype($json_arr);
+          $type = gettype($results);
           \Drupal::logger('yse_userdata')->notice('json_decode failed with data of type %type for user %lookupkey', ['%type' => $type, '%lookupkey' => $this->lookupkey]);
-        }
-        if (is_array($service_response)) {
-          $rec = $service_response['Record'];
-          return $rec;
-        }
-        else {
-          $type = gettype($service_response);
-          \Drupal::logger('yse_userdata')->notice('json_decode failed with data of type %type for user %lookupkey', ['%type' => $type, '%lookupkey' => $this->lookupkey]);
-          return FALSE;
+          //Exception here for try/catch in caller
+          return FALSE;       
         }
 
-      } catch (ClientException $e) {
-          \Drupal::logger('yse_userdata')->notice(Psr7\Message::toString($e->getResponse()));
+      } catch (ServerException $e) {
+        $errmsg = "Gateway did not like this request.";
+        if ($e->hasResponse()) {
+            $format = $e->getResponse()->getHeader('Content-Type');
+            if ( strstr($format, 'xml') ){ 
+                $xmlbod = (string) $e->getResponse()->getBody();
+                $errxml = simplexml_load_string($xmlbod, null, true);
+                $errmsg = $errxml->entry->children('l7', TRUE)->policyresult->attributes()->status;
+            }
+            if ( strstr($format, 'json') ){
+                $errjsn = Json::decode($e->getResponse->getBody(), TRUE);
+                $errmsg =  $errjsn['Error']['Message'];
+            }
+        }
+        \Drupal::logger('yse_userdata')->notice("Error: %err", ['%err', $errmsg]);
+      } catch (RequestException $e) {
+        //network badness
+        \Drupal::logger('yse_userdata')->notice("A network error occurred.");
+      } catch (\Exception $e) {
+        // fallback, in case of other exception
+        \Drupal::logger('yse_userdata')->notice("An error occurred.");
       }
     }
   }
