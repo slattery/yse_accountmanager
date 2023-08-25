@@ -113,12 +113,7 @@ class ExternalAuthRegisterEventSubscriber implements EventSubscriberInterface {
         // set up discourse if we can
         if (\Drupal::hasService('yse_accountmanager.discourseutils')) {
           $parameters = [];
-          $discourse_confirmation = \Drupal::service('yse_accountmanager.discourseutils')->sync_sso($parameters, $yseusr->id());
-          if (!empty($discourse_confirmation)){
-            return \Drupal::service('messenger')->addMessage('Discourse synced for ' . $yseusr->getDisplayName() . ' as ' . $discourse_confirmation . '. Success.');
-          } else {
-            return \Drupal::service('messenger')->addWarning('Discourse not synced for ' . $yseusr->getDisplayName());
-          }
+          $discourser = \Drupal::service('yse_accountmanager.discourseutils')->sync_sso($parameters, $yseusr->id());
         }
       }
     }

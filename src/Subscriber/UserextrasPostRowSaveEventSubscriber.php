@@ -151,12 +151,7 @@ class UserextrasPostRowSaveEventSubscriber implements EventSubscriberInterface {
       if($is_allowed['add_discourse']){
         if (\Drupal::hasService('yse_accountmanager.discourseutils')) {
           $parameters = [];
-          $discourse_confirmation = \Drupal::service('yse_accountmanager.discourseutils')->sync_sso($parameters, $uid);
-          if (!empty($discourse_confirmation)){
-            return \Drupal::service('messenger')->addMessage('Discourse synced for ' . $account->getDisplayName() . ' as ' . $discourse_confirmation . '. Success.');
-          } else {
-            return \Drupal::service('messenger')->addWarning('Discourse not synced for ' . $account->getDisplayName());
-          }
+          $discourser = \Drupal::service('yse_accountmanager.discourseutils')->sync_sso($parameters, $uid);
         }
       }
     }
