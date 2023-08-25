@@ -74,7 +74,7 @@ class YseDiscourseUtils {
       $this->logger->info('Verified discourse account for %account.', ['%account' => $parameters['name'] ]);
       //return $parameters['name'];
       $second = $this->config_user( $parameters, $account, $is_setup );
-      if ($second && $second[$proof]){
+      if (!empty($second)){
         return $parameters['username'];
       }
       else {
