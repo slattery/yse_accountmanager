@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - yse_accountmanager
+id: yse_discourse_deleteuser_action
+label: 'YSE Users: Delete User from Discourse'
+type: user
+plugin: yse_discourse_deleteuser_action
+configuration: {  }

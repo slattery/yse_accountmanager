@@ -94,28 +94,29 @@ class UserextrasPostRowSaveEventSubscriber implements EventSubscriberInterface {
    *   The migrate post row save event.
    */
   public function onPostRowSave(MigratePostRowSaveEvent $event) : void {
-    \Drupal::logger('yse_ooof')->notice("A oy error occurred.");
 
     $is_allowed = self::purposeCheck($event,['add_cas','add_profiles']);
     if (empty($is_allowed)){
-      \Drupal::logger('yse_ooof')->notice("A nothing error occurred.");
+      // nothing to do here
       return;
     }
-    \Drupal::logger('yse_ooof')->notice("A oooof error occurred.");
 
     //$mid  = $event->getMigration()->id();      //yse_user_import_students etc
     $row  = $event->getRow();
     $csv  = $row->getSource();
     $out  = $row->getDestination();
 
+    //UserInterface includes AccountInterface methods
     /** @var \Drupal\user\UserInterface $account */
     $account = user_load_by_mail($csv['email']);
 
     if ($account && $account instanceof UserInterface){
       $provider = 'cas';
       $authname = $csv['netid'];
+      $upi = $csv['upi'];
       $uid = $account->id();
-      $this->userdata->set('yse_userdata', $uid, 'upi', $csv['upi']);
+      $this->userdata->set('yse_userdata', $uid, 'netid', $authname);
+      $this->userdata->set('yse_userdata', $uid, 'upi', $upi);
 
       if ($is_allowed['add_cas']) {
         $this->authmap->save($account, $provider, $authname);
@@ -144,6 +145,18 @@ class UserextrasPostRowSaveEventSubscriber implements EventSubscriberInterface {
           $profile_storage      = \Drupal::entityTypeManager()->getStorage('node');
           $profile              = $profile_storage->create($profileprops);
           $profile->save();
+        }
+      }
+
+      if($is_allowed['add_discourse']){
+        if (\Drupal::hasService('yse_accountmanager.discourseutils')) {
+          $parameters = [];
+          $discourse_confirmation = \Drupal::service('yse_accountmanager.discourseutils')->sync_sso($parameters, $uid);
+          if (!empty($discourse_confirmation)){
+            return \Drupal::service('messenger')->addMessage('Discourse synced for ' . $account->getDisplayName() . ' as ' . $discourse_confirmation . '. Success.');
+          } else {
+            return \Drupal::service('messenger')->addWarning('Discourse not synced for ' . $account->getDisplayName());
+          }
         }
       }
     }

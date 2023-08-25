@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - yse_accountmanager
+id: yse_discourse_syncsso_action
+label: 'YSE Users: SSO Sync with YSE Discourse'
+type: user
+plugin: yse_discourse_syncsso_action
+configuration: {  }

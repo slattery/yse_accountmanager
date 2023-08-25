@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - yse_userdata
+id: yse_userdata_refresh_action
+label: 'YSE Users: Populate credentials from profile data'
+type: user
+plugin: yse_userdata_refresh_action
+configuration: {  }

@@ -77,7 +77,7 @@ class ExternalAuthRegisterEventSubscriber implements EventSubscriberInterface {
         $yseobj = $ysemgr->lookupkey($ysecas);
         $ysedat = $yseobj->fetchUserdata('yalesites_dirproxy');  //hopefully this is still cached!
         
-        foreach( ['title','upi'] as $k ){
+        foreach( ['title','upi','netid'] as $k ){
           if ($ysedat[$k]) { 
             $yseobj->setUserdata($yseusr->id(), $k, $ysedat[$k]);
             // kind of like 
@@ -95,6 +95,7 @@ class ExternalAuthRegisterEventSubscriber implements EventSubscriberInterface {
         if ($collisions == 0){
           $target_migration     = 'yse_accountmgr_migrateusers';
           $cache = \Drupal::cache()->get("hash:{$target_migration}:{$ysecas}");
+          //might change to tempstore over cache, more appropriate.
           $migrateprops         = $cache->data; // not sure this is plugnplay yet
           //dpr($cache->data, $return = FALSE, $name = 'mogrationcheck');
           //\Drupal\yse_userdata\Traits\YseProfileRepackagingTrait
@@ -107,6 +108,17 @@ class ExternalAuthRegisterEventSubscriber implements EventSubscriberInterface {
           $profile_storage      = \Drupal::entityTypeManager()->getStorage('node');
           $profile              = $profile_storage->create($profileprops);
           $profile->save();
+        }
+
+        // set up discourse if we can
+        if (\Drupal::hasService('yse_accountmanager.discourseutils')) {
+          $parameters = [];
+          $discourse_confirmation = \Drupal::service('yse_accountmanager.discourseutils')->sync_sso($parameters, $yseusr->id());
+          if (!empty($discourse_confirmation)){
+            return \Drupal::service('messenger')->addMessage('Discourse synced for ' . $yseusr->getDisplayName() . ' as ' . $discourse_confirmation . '. Success.');
+          } else {
+            return \Drupal::service('messenger')->addWarning('Discourse not synced for ' . $yseusr->getDisplayName());
+          }
         }
       }
     }
