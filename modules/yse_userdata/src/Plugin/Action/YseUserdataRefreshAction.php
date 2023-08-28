@@ -62,7 +62,7 @@ final class YseUserdataRefreshAction extends ViewsBulkOperationsActionBase {
         
         if ($profile->get('status')->getString() != '1'){
             $this->messenger()->addWarning('Found unpublished profile for ' . $account->getDisplayName() . '. Skipping.');
-            return NULL;
+            //(not skipping yet, need these to handle discourse. return NULL;
         }
 
         $set_netid = $profile->get('field_yse_netid')->getString();
