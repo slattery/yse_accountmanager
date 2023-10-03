@@ -56,12 +56,12 @@ function hook_discourse_sso_parameters_alter(array &$parameters) {
 function yse_accountmanager_user_cancel($edit, $account, $method) {
   // Put the service call in the switch statement just in case we want 
   // different treatments someday.
-  
+  // case 'user_cancel_delete':  see below, different hook
+
   switch ($method) {
     case 'user_cancel_block':            // just block might separate
     case 'user_cancel_block_unpublish':  // definitely delete_user
     case 'user_cancel_reassign':         // anonymize here but still
-    case 'user_cancel_delete':           // DELET 
       $parameters = [];
       $result = \Drupal::service('yse_accountmanager.discourseutils')->delete_user($parameters, $account);
       if (empty($result)){
@@ -75,6 +75,22 @@ function yse_accountmanager_user_cancel($edit, $account, $method) {
   } 
 }
 
+/**
+ * Implements hook_ENTITY_TYPE_delete() for user entities.
+ */
+function yse_accountmanager_user_delete($account) {
+  // Put the service call in the switch statement just in case we want 
+  // different treatments someday.
+  $parameters = [];
+  $result = \Drupal::service('yse_accountmanager.discourseutils')->delete_user($parameters, $account);
+  if (empty($result)){
+    return \Drupal::service('messenger')->addMessage('Discourse returned no result for ' . $account->getDisplayName() );
+  } elseif ($result == 'DELETED'){
+    return \Drupal::service('messenger')->addMessage('Discourse user deleted for ' . $account->getDisplayName() );
+  } else {
+    return \Drupal::service('messenger')->addMessage('Discourse user anonymised for ' . $account->getDisplayName() . ' as ' . $result . ' to retain their posts.');
+  } 
+}
 /**
  * Implements hook_form_FORM_ID_alter().
  * @see yse_cas_extras_form_bulk_add_cas_users_alter()
