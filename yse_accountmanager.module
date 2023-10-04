@@ -76,9 +76,9 @@ function yse_accountmanager_user_cancel($edit, $account, $method) {
 }
 
 /**
- * Implements hook_ENTITY_TYPE_delete() for user entities.
+ * Implements hook_ENTITY_TYPE_predelete() for user entities.
  */
-function yse_accountmanager_user_delete($account) {
+function yse_accountmanager_user_predelete($account) {
   // Put the service call in the switch statement just in case we want 
   // different treatments someday.
   $parameters = [];
