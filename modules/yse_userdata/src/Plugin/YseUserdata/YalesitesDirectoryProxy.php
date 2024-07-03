@@ -37,7 +37,28 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
    */
   protected $queryConfig;
 
-   /**
+  /**
+   * The arr.
+   *
+   * @var array
+   */
+  protected $userdata;
+
+  /**
+   * The lookup string, should represent the upi or netid of person.
+   *
+   * @var string
+   */
+  protected $lookupkey = '';
+
+  /**
+   * The netid of person.
+   *
+   * @var string
+   */
+  protected $netid = '';
+
+  /**
    * Constructs the YalesitesDirectoryProxy plugin.
    *
    * @param array $configuration
@@ -57,7 +78,7 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $cache_service, $config_factory);
     // querymap below is banking on the config overrides service doing its job before this get
     $this->queryConfig = $config_factory->get('yse_userdata.yse_userdata_plugin.yalesites_directory_proxy');
-    $this->httpClient  = $http_client;
+    $this->httpClient = $http_client;
   }
 
   /**
@@ -68,7 +89,7 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('cache.yse_userdata'),      
+      $container->get('cache.yse_userdata'),
       $container->get('config.factory'),
       $container->get('http_client')
     );
@@ -92,18 +113,20 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
     $userdata = [];
     $ysdirrec = $this->retrieveDirectoryRecord();
 
-    if ($ysdirrec && is_array($ysdirrec)){
+    if ($ysdirrec && is_array($ysdirrec)) {
       $userdata = $this->gatherAttributes($ysdirrec);
-    } elseif ($ysdirrec && is_string($ysdirrec)){
+    }
+    elseif ($ysdirrec && is_string($ysdirrec)) {
       //I should pass an Ecxeption here to allow try/catch at the caller.
-    } else {
+    }
+    else {
       \Drupal::logger('yse_userdata')->notice('Directory returned a malformed result for user %lookupkey', ['%lookupkey' => $this->lookupkey]);
     }
 
 
 
-    if (empty($this->netid) && empty($this->getNetid())){
-      if (isset($userdata['netid'])){
+    if (empty($this->netid) && empty($this->getNetid())) {
+      if (isset($userdata['netid'])) {
         $this->setNetid($userdata['netid']);
       }
     }
@@ -145,9 +168,9 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
   }
 
   /**
- * Returns the record if found
- * SOURCE
- */
+   * Returns the record if found
+   * SOURCE
+   */
   protected function retrieveDirectoryRecord() {
 
     $path = \Drupal::service('file_system')->realpath('private://secrets.json');
@@ -166,27 +189,27 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
 
       $lookupkey = $this->lookupkey;
       $lookuparg = (is_numeric($lookupkey) && strlen($lookupkey) == 8) ? 'upi' : 'netid';
-     
+
       try {
         $gateway = "https://{$host}/{$path}";
         $response = $this->httpClient->get($gateway, [
-          'auth'    => [ $name, $pass ],
-          'query'   => ['outputformat' => 'json', $lookuparg => $this->lookupkey ],
-          'headers' => ['Accept'       => 'application/json' ],
+          'auth' => [$name, $pass],
+          'query' => ['outputformat' => 'json', $lookuparg => $this->lookupkey],
+          'headers' => ['Accept' => 'application/json'],
         ]);
         $results = Json::decode($response->getBody(), TRUE);
 
         if (is_array($results)) {
-          if($results['root']){
+          if ($results['root']) {
             $errmsg = $results['root']['message'];
             //Exception here for try/catch in caller
-            \Drupal::logger('yse_userdata')->notice('Lookup did not return a recordfor %lookupkey: %errmsg', ['%lookupkey' => $this->lookupkey, '%errmsg' =>  $errmsg]);
+            \Drupal::logger('yse_userdata')->notice('Lookup did not return a recordfor %lookupkey: %errmsg', ['%lookupkey' => $this->lookupkey, '%errmsg' => $errmsg]);
           }
-          elseif ($results['ServiceResponse']){
-            if ($results['ServiceResponse']['Record'] && is_array($results['ServiceResponse']['Record'])){
+          elseif ($results['ServiceResponse']) {
+            if ($results['ServiceResponse']['Record'] && is_array($results['ServiceResponse']['Record'])) {
               $record = $results['ServiceResponse']['Record'];
               return $record;
-            } 
+            }
             else {
               \Drupal::logger('yse_userdata')->notice('ServiceResponse did not return a record for %lookupkey', ['%lookupkey' => $this->lookupkey]);
             }
@@ -201,28 +224,31 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
           $type = gettype($results);
           \Drupal::logger('yse_userdata')->notice('json_decode failed with data of type %type for user %lookupkey', ['%type' => $type, '%lookupkey' => $this->lookupkey]);
           //Exception here for try/catch in caller
-          return FALSE;       
+          return FALSE;
         }
 
-      } catch (ServerException $e) {
+      }
+      catch (ServerException $e) {
         $errmsg = "Gateway did not like this request.";
         if ($e->hasResponse()) {
-            $format = $e->getResponse()->getHeader('Content-Type');
-            if ( strstr($format, 'xml') ){ 
-                $xmlbod = (string) $e->getResponse()->getBody();
-                $errxml = simplexml_load_string($xmlbod, null, true);
-                $errmsg = $errxml->entry->children('l7', TRUE)->policyresult->attributes()->status;
-            }
-            if ( strstr($format, 'json') ){
-                $errjsn = Json::decode($e->getResponse->getBody(), TRUE);
-                $errmsg =  $errjsn['Error']['Message'];
-            }
+          $format = $e->getResponse()->getHeader('Content-Type');
+          if (strstr($format, 'xml')) {
+            $xmlbod = (string) $e->getResponse()->getBody();
+            $errxml = simplexml_load_string($xmlbod, NULL, TRUE);
+            $errmsg = $errxml->entry->children('l7', TRUE)->policyresult->attributes()->status;
+          }
+          if (strstr($format, 'json')) {
+            $errjsn = Json::decode($e->getResponse->getBody(), TRUE);
+            $errmsg = $errjsn['Error']['Message'];
+          }
         }
         \Drupal::logger('yse_userdata')->notice("Error: %err", ['%err', $errmsg]);
-      } catch (RequestException $e) {
+      }
+      catch (RequestException $e) {
         //network badness
         \Drupal::logger('yse_userdata')->notice("A network error occurred.");
-      } catch (\Exception $e) {
+      }
+      catch (\Exception $e) {
         // fallback, in case of other exception
         \Drupal::logger('yse_userdata')->notice("An error occurred.");
       }
@@ -236,13 +262,13 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
    *
    * @param array $rec
    *   The attribute value to compare against.
-   * 
+   *
    */
   protected function gatherAttributes(array $rec) {
     // should have a validate thing here.
-      
+
     if (is_array($rec)) {
-       
+
       $user_data = [];
       $side_band = [];
 
@@ -288,10 +314,10 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
       }
 
       // sideband sidebar - post* are considered staff but ydir sets faculty
-      if ($side_band['title'] && (preg_match("/postdoc/i", $side_band['title']) || preg_match("/post-doc/i", $side_band['title']) || preg_match("/post doc/i", $side_band['title']))){
+      if ($side_band['title'] && (preg_match("/postdoc/i", $side_band['title']) || preg_match("/post-doc/i", $side_band['title']) || preg_match("/post doc/i", $side_band['title']))) {
         $side_band['hasrole'] = 'staff';
       }
-      elseif ($side_band['title'] && (preg_match("/postgrad/i", $side_band['title']) || preg_match("/post-grad/i", $side_band['title']) || preg_match("/post grad/i", $side_band['title']))){
+      elseif ($side_band['title'] && (preg_match("/postgrad/i", $side_band['title']) || preg_match("/post-grad/i", $side_band['title']) || preg_match("/post grad/i", $side_band['title']))) {
         $side_band['hasrole'] = 'staff';
       }
 
@@ -303,11 +329,12 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
       if ($rec['hasStudentRole'] == 'Y') {
         $user_data['hasStudentRole'] = 'Y';
       }
-      if ($rec['hasFacultyRole'] == 'Y' ) {
-        if ($side_band['hasrole'] && $side_band['hasrole'] == 'staff'){
+      if ($rec['hasFacultyRole'] == 'Y') {
+        if ($side_band['hasrole'] && $side_band['hasrole'] == 'staff') {
           $user_data['hasFacultyRole'] = 'N';
           $user_data['hasStaffRole'] = 'Y';
-        } else {
+        }
+        else {
           $user_data['hasFacultyRole'] = 'Y';
         }
       }
