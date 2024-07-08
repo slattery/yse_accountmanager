@@ -91,7 +91,7 @@ class YseUserdataManager implements YseUserdataManagerInterface {
    */
   public function __construct(ConfigFactoryInterface $config_factory, StreamWrapperManagerInterface $stream_wrapper_manager, YseUserdataPluginManager $plugin_manager, LoggerInterface $logger_interface, CacheBackendInterface $cache_service, UserDataInterface $user_data) {
     $this->pluginManager = $plugin_manager;
-    $this->$streamWrapperManager = $stream_wrapper_manager;
+    $this->streamWrapperManager = $stream_wrapper_manager;
     $this->configFactory = $config_factory;
     $this->logger = $logger_interface;
     $this->cache = $cache_service;
