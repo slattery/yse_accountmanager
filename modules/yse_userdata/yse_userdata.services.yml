@@ -1,7 +1,7 @@
 services:
   yse_userdata.manager:
     class: Drupal\yse_userdata\YseUserdataManager
-    arguments: ['@config.factory','@plugin.manager.yse_userdata','@logger.channel.yse_userdata','@cache.yse_userdata','@user.data']
+    arguments: ['@config.factory','@stream_wrapper_manager','@plugin.manager.yse_userdata','@logger.channel.yse_userdata','@cache.yse_userdata','@user.data']
   plugin.manager.yse_userdata:
     class: Drupal\yse_userdata\Plugin\YseUserdataPluginManager
     parent: default_plugin_manager
