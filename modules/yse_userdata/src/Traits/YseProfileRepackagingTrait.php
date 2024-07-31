@@ -38,7 +38,7 @@ trait YseProfileRepackagingTrait {
     $profileprepped['status'] = $ysedat['status'];
     $profileprepped['field_yse_alias_shortcut'] = self::slugify($ysedat['name']);
 
-    if (in_array($ysedat['primary_affiliation'], ['STAFF', 'FACULTY'])) {
+    if (in_array($ysedat['primary_affiliation'], ['STAFF', 'FACULTY', 'EMPLOYEE', 'AFFILIATE'])) {
       $profileprepped['field_profile_position'] = $ysedat['title'];
     }
     if ($ysedat['degree_type_taxref']) {
@@ -116,7 +116,7 @@ trait YseProfileRepackagingTrait {
     elseif ($ysedat['title'] && (preg_match("/postgrad/i", $ysedat['title']) || preg_match("/post-grad/i", $ysedat['title']) || preg_match("/post grad/i", $ysedat['title']))) {
       $primarytype = 'staff';
     }
-    elseif ($ysedat['primary_affiliation'] && in_array($ysedat['primary_affiliation'], ['STAFF', 'FACULTY', 'STUDENT'])) {
+    elseif ($ysedat['primary_affiliation'] && in_array($ysedat['primary_affiliation'], ['STAFF', 'FACULTY', 'STUDENT', 'EMPLOYEE', 'AFFILIATE'])) {
       $primarytype = strtolower($ysedat['primary_affiliation']);
     }
 

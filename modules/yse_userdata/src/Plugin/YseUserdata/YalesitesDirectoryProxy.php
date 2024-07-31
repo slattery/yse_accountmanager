@@ -321,10 +321,21 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
         $side_band['hasrole'] = 'staff';
       }
 
+      //just separating this to keep the side_band quality known
+      if ($rec['hasEmployeeRole'] == 'Y' || $rec['hasAffiliateRole'] == 'Y') {
+        $side_band['hasrole'] = 'staff';
+      }
+
 
       // set up these atts for Role Mapping
+      // Role Mapping is performed for CAS Attributes, so not found here.
       if ($rec['hasEmployeeRole'] == 'Y') {
         $user_data['hasEmployeeRole'] = 'Y';
+        if ($side_band['hasrole'] && $side_band['hasrole'] == 'staff') {
+          //hasEmployeeRole status unknown until we catalog views, etc for role vs type.
+          //action depends on CAS Attributes config, elsewhere.
+          $user_data['hasStaffRole'] = 'Y';
+        }
       }
       if ($rec['hasStudentRole'] == 'Y') {
         $user_data['hasStudentRole'] = 'Y';
@@ -349,6 +360,11 @@ class YalesitesDirectoryProxy extends YseUserdataPluginBase {
       }
       if ($rec['hasAffiliateRole'] == 'Y') {
         $user_data['hasAffiliateRole'] = 'Y';
+        if ($side_band['hasrole'] && $side_band['hasrole'] == 'staff') {
+          //hasEmployeeRole status unknown until we catalog views, etc for role vs type.
+          //action depends on CAS Attributes config, elsewhere.
+          $user_data['hasStaffRole'] = 'Y';
+        }
       }
 
       return $user_data;
