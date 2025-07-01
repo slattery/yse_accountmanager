@@ -33,7 +33,7 @@ function yse_accountmanager_help($route_name, RouteMatchInterface $route_match) 
 /**
  * HODE UP - account is not passed.
  * username on discourse has been slugified before
- * 
+ *
  * Alter the parameters for the Discourse SSO.
  *
  * @param array $parameters
@@ -46,15 +46,18 @@ function hook_discourse_sso_parameters_alter(array &$parameters) {
   $accountid = \Drupal::currentUser()->id();
   // I hope this reference survives the travel.
   // this hook should run after the Discourse SSO module hook by virtue of alphabetical sort.
-  \Drupal::service('yse_accountmanager.discourseutils')->setup_parameters($parameters, $accountid);  
+  $take_action = \Drupal::token()->replace("[config_token:discourse_user_actions]", [], ["clear" => TRUE]);
+  if ($take_action && $take_action == 'true') {
+    \Drupal::service('yse_accountmanager.discourseutils')->setup_parameters($parameters, $accountid);
+  }
 }
 
 
- /*
+/*
  * Implements hook_user_cancel().
  */
 function yse_accountmanager_user_cancel($edit, $account, $method) {
-  // Put the service call in the switch statement just in case we want 
+  // Put the service call in the switch statement just in case we want
   // different treatments someday.
   // case 'user_cancel_delete':  see below, different hook
 
@@ -63,33 +66,43 @@ function yse_accountmanager_user_cancel($edit, $account, $method) {
     case 'user_cancel_block_unpublish':  // definitely delete_user
     case 'user_cancel_reassign':         // anonymize here but still
       $parameters = [];
-      $result = \Drupal::service('yse_accountmanager.discourseutils')->delete_user($parameters, $account);
-      if (empty($result)){
-        return \Drupal::service('messenger')->addMessage('Discourse returned no result for ' . $account->getDisplayName() );
-      } elseif ($result == 'DELETED'){
-        return \Drupal::service('messenger')->addMessage('Discourse user deleted for ' . $account->getDisplayName() );
-      } else {
-        return \Drupal::service('messenger')->addMessage('Discourse user anonymised for ' . $account->getDisplayName() . ' as ' . $result . ' to retain their posts.');
+      $take_action = \Drupal::token()->replace("[config_token:discourse_user_actions]", [], ["clear" => TRUE]);
+      if ($take_action && $take_action == 'true') {
+        $result = \Drupal::service('yse_accountmanager.discourseutils')->delete_user($parameters, $account);
+        if (empty($result)) {
+          return \Drupal::service('messenger')->addMessage('Discourse returned no result for ' . $account->getDisplayName());
+        }
+        elseif ($result == 'DELETED') {
+          return \Drupal::service('messenger')->addMessage('Discourse user deleted for ' . $account->getDisplayName());
+        }
+        else {
+          return \Drupal::service('messenger')->addMessage('Discourse user anonymised for ' . $account->getDisplayName() . ' as ' . $result . ' to retain their posts.');
+        }
       }
       break;
-  } 
+  }
 }
 
 /**
  * Implements hook_ENTITY_TYPE_predelete() for user entities.
  */
 function yse_accountmanager_user_predelete($account) {
-  // Put the service call in the switch statement just in case we want 
+  // Put the service call in the switch statement just in case we want
   // different treatments someday.
   $parameters = [];
-  $result = \Drupal::service('yse_accountmanager.discourseutils')->delete_user($parameters, $account);
-  if (empty($result)){
-    return \Drupal::service('messenger')->addMessage('Discourse returned no result for ' . $account->getDisplayName() );
-  } elseif ($result == 'DELETED'){
-    return \Drupal::service('messenger')->addMessage('Discourse user deleted for ' . $account->getDisplayName() );
-  } else {
-    return \Drupal::service('messenger')->addMessage('Discourse user anonymised for ' . $account->getDisplayName() . ' as ' . $result . ' to retain their posts.');
-  } 
+  $take_action = \Drupal::token()->replace("[config_token:discourse_user_actions]", [], ["clear" => TRUE]);
+  if ($take_action && $take_action == 'true') {
+    $result = \Drupal::service('yse_accountmanager.discourseutils')->delete_user($parameters, $account);
+    if (empty($result)) {
+      return \Drupal::service('messenger')->addMessage('Discourse returned no result for ' . $account->getDisplayName());
+    }
+    elseif ($result == 'DELETED') {
+      return \Drupal::service('messenger')->addMessage('Discourse user deleted for ' . $account->getDisplayName());
+    }
+    else {
+      return \Drupal::service('messenger')->addMessage('Discourse user anonymised for ' . $account->getDisplayName() . ' as ' . $result . ' to retain their posts.');
+    }
+  }
 }
 /**
  * Implements hook_form_FORM_ID_alter().
